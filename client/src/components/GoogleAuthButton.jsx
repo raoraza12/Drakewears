@@ -12,8 +12,9 @@ export default function GoogleAuthButton({ isSignUp = false, onError, redirect =
   const { googleLogin } = useAuth();
   const navigate = useNavigate();
 
-  // Official Google Client ID provided by user
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '127671825423-nm05na7t5f9upond54tk5moshjhcj8rs.apps.googleusercontent.com';
+  // Google Client ID comes only from VITE_GOOGLE_CLIENT_ID (see client/.env.example).
+  // No hardcoded fallback: without it the Google button simply does not render.
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
   const handleCredentialResponse = async (response) => {
     if (!response || !response.credential) {
@@ -79,9 +80,7 @@ export default function GoogleAuthButton({ isSignUp = false, onError, redirect =
         }
       }
 
-      if (attempts > 30 && intervalId) {
-        clearInterval(intervalId);
-      }
+      if (attempts > 30 && intervalId) clearInterval(intervalId);
     };
 
     if (window.google?.accounts?.id) {
