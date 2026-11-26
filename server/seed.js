@@ -28,7 +28,7 @@ const unsplashAcc = [
 const products = [
   { name: 'Obsidian Slim Suit', slug: 'obsidian-slim-suit', description: 'A masterfully tailored slim-fit suit in premium obsidian wool blend. Perfect for boardrooms and black-tie events.', price: 28999, comparePrice: 35000, category: 'Men', subcategory: 'Suits', images: [unsplashMen[0], unsplashMen[1]], sizes: ['S','M','L','XL','XXL'], colors: [{name:'Black',hex:'#1a1a1a'},{name:'Charcoal',hex:'#36454F'}], stock: 45, featured: true, bestseller: true, material: '80% Wool, 20% Polyester', care: 'Dry clean only', tags: ['suit','formal','premium'], rating: 4.8, numReviews: 124 },
   { name: 'Ivory Linen Blazer', slug: 'ivory-linen-blazer', description: 'Breathable linen blazer for sophisticated summer looks. Crafted with Italian linen for ultimate comfort.', price: 14999, comparePrice: 18500, category: 'Men', subcategory: 'Blazers', images: [unsplashMen[1], unsplashMen[0]], sizes: ['S','M','L','XL'], colors: [{name:'Ivory',hex:'#FFFFF0'},{name:'Beige',hex:'#F5F5DC'}], stock: 30, featured: true, newArrival: true, material: '100% Linen', care: 'Hand wash cold', tags: ['blazer','summer','linen'], rating: 4.6, numReviews: 87 },
-  { name: 'Midnight Oxford Shirt', slug: 'midnight-oxford-shirt', description: 'Classic Oxford weave shirt in deep midnight blue. Versatile enough for casual and semi-formal occasions.', price: 5499, comparePrice: 7000, category: 'Men', subcategory: 'Shirts', images: [unsplashMen[2], unsplashMen[3]], sizes: ['S','M','L','XL','XXL','XXXL'], colors: [{name:'Navy',hex:'#000080'},{name:'White',hex:'#FFFFFF'},{name:'Slate',hex:'#708090'}], stock: 100, bestseller: true, material: '100% Cotton', care: 'Machine wash cold', tags: ['shirt','oxford','casual'], rating: 4.7, numReviews: 203 },
+  { name: 'Midnight Oxford Shirt', slug: 'midnight-oxford-shirt', description: 'Contemporary Oxford weave shirt in deep midnight blue. Versatile enough for casual and semi-formal occasions.', price: 5499, comparePrice: 7000, category: 'Men', subcategory: 'Shirts', images: [unsplashMen[2], unsplashMen[3]], sizes: ['S','M','L','XL','XXL','XXXL'], colors: [{name:'Navy',hex:'#000080'},{name:'White',hex:'#FFFFFF'},{name:'Slate',hex:'#708090'}], stock: 100, bestseller: true, material: '100% Cotton', care: 'Machine wash cold', tags: ['shirt','oxford','casual'], rating: 4.7, numReviews: 203 },
   { name: 'Noir Cargo Trousers', slug: 'noir-cargo-trousers', description: 'Contemporary cargo trousers with utility pockets. Combines streetwear aesthetics with everyday comfort.', price: 6999, comparePrice: 9000, category: 'Men', subcategory: 'Trousers', images: [unsplashMen[3], unsplashMen[4]], sizes: ['S','M','L','XL','XXL'], colors: [{name:'Black',hex:'#1a1a1a'},{name:'Olive',hex:'#556B2F'},{name:'Khaki',hex:'#C3B091'}], stock: 75, newArrival: true, material: '98% Cotton, 2% Elastane', care: 'Machine wash', tags: ['cargo','streetwear','trousers'], rating: 4.5, numReviews: 156 },
   { name: 'Premium Cashmere Sweater', slug: 'premium-cashmere-sweater', description: 'Luxuriously soft cashmere sweater. Timeless design that elevates any outfit with effortless elegance.', price: 19999, comparePrice: 25000, category: 'Men', subcategory: 'Knitwear', images: [unsplashMen[4], unsplashMen[0]], sizes: ['S','M','L','XL'], colors: [{name:'Camel',hex:'#C19A6B'},{name:'Burgundy',hex:'#800020'},{name:'Forest',hex:'#228B22'}], stock: 25, featured: true, material: '100% Pure Cashmere', care: 'Dry clean recommended', tags: ['cashmere','luxury','sweater'], rating: 4.9, numReviews: 98 },
 
@@ -66,18 +66,26 @@ async function seed() {
     }
     console.log(`✅ Seeded ${products.length} products`);
 
-    // Seed Users (Manually hash passwords)
-    const adminPassword = await bcrypt.hash('huzaifaraza293742', 12);
-
-    const userPassword = await bcrypt.hash('test1234', 12);
+    // Seed Users — passwords come ONLY from the environment (see server/.env.example).
+    // Never hardcode a password here: this file is committed to git.
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminPassword) {
+      throw new Error('ADMIN_PASSWORD is not set. Set it in server/.env (never commit it) and re-run the seed.');
+    }
+    const adminHash = await bcrypt.hash(adminPassword, 12);
 
     await prisma.user.create({
-      data: { name: 'Admin User', email: 'drakewearsofficial@gmail.com', password: adminPassword, role: 'admin' }
+      data: { name: 'Admin User', email: 'drakewearsofficial@gmail.com', password: adminHash, role: 'admin' }
     });
 
-    await prisma.user.create({
-      data: { name: 'Test User', email: 'test@drakewears.com', password: userPassword, role: 'user' }
-    });
+    if (process.env.SEED_TEST_PASSWORD) {
+      const testHash = await bcrypt.hash(process.env.SEED_TEST_PASSWORD, 12);
+      await prisma.user.create({
+        data: { name: 'Test User', email: 'test@drakewears.com', password: testHash, role: 'user' }
+      });
+    } else {
+      console.log('Skipping test user: SEED_TEST_PASSWORD is not set.');
+    }
 
     console.log('✅ Seeded admin and test users');
     
