@@ -57,6 +57,10 @@ const ATELIER_SPECS = [
 const Home = () => {
   const [popularProducts, setPopularProducts] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
+  const [popularLoading, setPopularLoading] = useState(true);
+  const [newArrivalsLoading, setNewArrivalsLoading] = useState(true);
+  const [popularError, setPopularError] = useState(null);
+  const [newArrivalsError, setNewArrivalsError] = useState(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -73,14 +77,22 @@ const Home = () => {
           .filter(p => (p.category || '').toLowerCase() !== 'drake vault');
         setPopularProducts(list.slice(0, 4));
       })
-      .catch(err => console.error(err));
+      .catch(err => {
+        console.error(err);
+        setPopularError('Could not load popular products. Please check your connection and try again.');
+      })
+      .finally(() => setPopularLoading(false));
 
     API.get('/products?sort=newest&limit=8')
       .then(res => {
         const list = res.data.products || res.data || [];
         setNewArrivals(list.slice(0, 8));
       })
-      .catch(err => console.error(err));
+      .catch(err => {
+        console.error(err);
+        setNewArrivalsError('Could not load new arrivals. Please check your connection and try again.');
+      })
+      .finally(() => setNewArrivalsLoading(false));
   }, []);
 
   // Auto-Advance Carousel every 3.5s (Pauses on hover / touch active)
@@ -352,8 +364,12 @@ const Home = () => {
             </div>
             
             <div className="products-grid scroll-reveal scroll-delay-1">
-              {newArrivals.length === 0 ? (
+              {newArrivalsError ? (
+                <p style={{ color: '#dc2626' }}>{newArrivalsError}</p>
+              ) : newArrivalsLoading ? (
                 <p style={{ color: 'var(--text-secondary)' }}>Loading latest arrivals...</p>
+              ) : newArrivals.length === 0 ? (
+                <p style={{ color: 'var(--text-secondary)' }}>No new arrivals available right now.</p>
               ) : (
                 newArrivals.slice(0, 4).map((product) => (
                   <ProductCard key={product.id || product._id} product={product} />
@@ -379,8 +395,12 @@ const Home = () => {
             </div>
             
             <div className="products-grid scroll-reveal scroll-delay-1">
-              {popularProducts.length === 0 ? (
+              {popularError ? (
+                <p style={{ color: '#dc2626' }}>{popularError}</p>
+              ) : popularLoading ? (
                 <p style={{ color: '#71717a' }}>Loading popular products...</p>
+              ) : popularProducts.length === 0 ? (
+                <p style={{ color: '#71717a' }}>No popular products available right now.</p>
               ) : (
                 popularProducts.map((product) => (
                   <ProductCard key={product.id || product._id} product={product} />
